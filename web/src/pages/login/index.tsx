@@ -93,7 +93,7 @@ const LoginPage: React.FC = () => {
         >
             <Card
                 style={{
-                    width: 380,
+                    width: 'min(380px, calc(100vw - 32px))',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 }}
             >

@@ -36,3 +36,15 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* 移动端：弹窗和统计卡片不要超出屏幕，表格已横向滚动 */
+@media (max-width: 767px) {
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+
+  .ant-statistic-content {
+    font-size: 20px;
+  }
+}

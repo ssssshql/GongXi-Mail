@@ -5,6 +5,8 @@ import {
     Menu,
     Avatar,
     Dropdown,
+    Drawer,
+    Grid,
     theme,
     Typography,
     Space,
@@ -20,6 +22,7 @@ import {
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    MenuOutlined,
     FileTextOutlined,
     HistoryOutlined,
     FileSearchOutlined,
@@ -30,6 +33,7 @@ import { isSuperAdmin } from '../utils/auth';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const menuConfig = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '数据概览', title: '数据概览' },
@@ -44,10 +48,16 @@ const menuConfig = [
 
 const MainLayout: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const { admin, clearAuth } = useAuthStore();
     const { token } = theme.useToken();
+    // Mobile = below the md breakpoint (768px). On mobile the fixed
+    // sidebar is replaced by a drawer so it no longer eats 208px of
+    // screen width; on desktop the layout is unchanged.
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
 
     const hasSuperAdminPermission = isSuperAdmin(admin?.role);
     const displayName = admin?.username?.trim() || 'Admin';
@@ -94,67 +104,98 @@ const MainLayout: React.FC = () => {
         .filter(item => location.pathname.startsWith(item.key))
         .map(item => item.key);
 
-    return (
-        <Layout style={{ minHeight: '100vh' }}>
-            <Sider
-                trigger={null}
-                collapsible
-                collapsed={collapsed}
-                theme="light"
-                width={208}
+    const sidebarContent = (
+        <>
+            <div
                 style={{
-                    overflow: 'auto',
-                    height: '100vh',
-                    position: 'fixed',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    borderRight: '1px solid #f0f0f0',
+                    height: 64,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderBottom: '1px solid #f0f0f0',
                 }}
             >
-                <div
+                <Space>
+                    <div
+                        style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            background: '#1890ff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontWeight: 600,
+                        }}
+                    >
+                        GX
+                    </div>
+                    {(!isMobile || mobileMenuOpen) && !collapsed && (
+                        <Text strong style={{ fontSize: 16 }}>廾匸邮箱</Text>
+                    )}
+                </Space>
+            </div>
+            <Menu
+                theme="light"
+                mode="inline"
+                selectedKeys={selectedKeys}
+                items={menuItems}
+                style={{ borderRight: 0, marginTop: 8 }}
+                onClick={() => {
+                    if (isMobile) setMobileMenuOpen(false);
+                }}
+            />
+        </>
+    );
+
+    return (
+        <Layout style={{ minHeight: '100vh' }}>
+            {!isMobile && (
+                <Sider
+                    trigger={null}
+                    collapsible
+                    collapsed={collapsed}
+                    theme="light"
+                    width={208}
                     style={{
-                        height: 64,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderBottom: '1px solid #f0f0f0',
+                        overflow: 'auto',
+                        height: '100vh',
+                        position: 'fixed',
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        borderRight: '1px solid #f0f0f0',
                     }}
                 >
-                    <Space>
-                        <div
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 8,
-                                background: '#1890ff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontWeight: 600,
-                            }}
-                        >
-                            GX
-                        </div>
-                        {!collapsed && (
-                            <Text strong style={{ fontSize: 16 }}>廾匸邮箱</Text>
-                        )}
-                    </Space>
-                </div>
-                <Menu
-                    theme="light"
-                    mode="inline"
-                    selectedKeys={selectedKeys}
-                    items={menuItems}
-                    style={{ borderRight: 0, marginTop: 8 }}
-                />
-            </Sider>
+                    {sidebarContent}
+                </Sider>
+            )}
 
-            <Layout style={{ marginLeft: collapsed ? 80 : 208, transition: 'margin-left 0.2s ease' }}>
+            {isMobile && (
+                <Drawer
+                    placement="left"
+                    width={240}
+                    open={mobileMenuOpen}
+                    onClose={() => setMobileMenuOpen(false)}
+                    styles={{ body: { padding: 0 } }}
+                    title="廾匸邮箱"
+                >
+                    <Menu
+                        theme="light"
+                        mode="inline"
+                        selectedKeys={selectedKeys}
+                        items={menuItems}
+                        style={{ borderRight: 0, marginTop: 8 }}
+                        onClick={() => setMobileMenuOpen(false)}
+                    />
+                </Drawer>
+            )}
+
+            <Layout style={{ marginLeft: isMobile ? 0 : collapsed ? 80 : 208, transition: 'margin-left 0.2s ease' }}>
                 <Header
                     style={{
-                        padding: '0 24px',
+                        padding: isMobile ? '0 12px' : '0 24px',
                         background: '#fff',
                         display: 'flex',
                         alignItems: 'center',
@@ -166,18 +207,35 @@ const MainLayout: React.FC = () => {
                 >
                     <Space>
                         <span
-                            onClick={() => setCollapsed(!collapsed)}
+                            onClick={() => {
+                                if (isMobile) {
+                                    setMobileMenuOpen(true);
+                                } else {
+                                    setCollapsed(!collapsed);
+                                }
+                            }}
                             style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }}
                         >
-                            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            {isMobile ? (
+                                <MenuOutlined />
+                            ) : collapsed ? (
+                                <MenuUnfoldOutlined />
+                            ) : (
+                                <MenuFoldOutlined />
+                            )}
                         </span>
-                        <Breadcrumb
-                            items={[
-                                { title: '首页' },
-                                { title: pageTitle },
-                            ]}
-                            style={{ marginLeft: 16 }}
-                        />
+                        {!isMobile && (
+                            <Breadcrumb
+                                items={[
+                                    { title: '首页' },
+                                    { title: pageTitle },
+                                ]}
+                                style={{ marginLeft: 16 }}
+                            />
+                        )}
+                        {isMobile && (
+                            <Text strong>{pageTitle}</Text>
+                        )}
                     </Space>
 
                     <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
@@ -185,18 +243,21 @@ const MainLayout: React.FC = () => {
                             <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
                                 {avatarText}
                             </Avatar>
-                            <Text>{displayName}</Text>
+                            {!isMobile && <Text>{displayName}</Text>}
                         </Space>
                     </Dropdown>
                 </Header>
 
                 <Content
                     style={{
-                        margin: 24,
-                        padding: 24,
+                        margin: isMobile ? 12 : 24,
+                        padding: isMobile ? 12 : 24,
                         background: '#fff',
                         borderRadius: token.borderRadiusLG,
-                        minHeight: 'calc(100vh - 56px - 48px)',
+                        minHeight: isMobile
+                            ? 'calc(100vh - 56px - 24px)'
+                            : 'calc(100vh - 56px - 48px)',
+                        overflowX: 'auto',
                     }}
                 >
                     <Outlet />
